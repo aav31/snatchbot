@@ -11,6 +11,11 @@
 class TextRecognizer {
 private:
     tesseract::TessBaseAPI tess;
+    static constexpr int userDefinedDpi{ 300 };
+    static constexpr double tileLengthInches{ 0.708661 };
+    static constexpr int tileLengthPixels{ 16 };
+    static constexpr double tileDpi{ tileLengthPixels / tileLengthInches };
+    static constexpr double scaleFactor{ userDefinedDpi / tileDpi };
 
     // Private constructor
     TextRecognizer(const char* dataPath = NULL, const std::string& lang = "eng") {
@@ -20,7 +25,8 @@ private:
         tess.SetPageSegMode(tesseract::PSM_SINGLE_CHAR);  // Detect orientation AND recognize text
 
         tess.SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-        tess.SetVariable("user_defined_dpi", "300");
+        const char* userDefinedDpiString{ std::to_string(tileDpi).c_str() };
+        tess.SetVariable("user_defined_dpi", userDefinedDpiString );
 
     }
 
@@ -48,8 +54,7 @@ public:
 
         // Resize
         cv::Mat resizedImage;
-        double scale_factor = 300.0 / 70.0; // Since Tesseract assumes 70 DPI by default
-        cv::resize(croppedImage, resizedImage, cv::Size(), scale_factor, scale_factor, cv::INTER_CUBIC);
+        cv::resize(croppedImage, resizedImage, cv::Size(), scaleFactor, scaleFactor, cv::INTER_CUBIC);
 
         // Convert to grayscale
         cv::Mat grayImage;
