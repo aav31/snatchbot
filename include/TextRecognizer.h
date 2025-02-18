@@ -7,6 +7,7 @@
 #include <tesseract/ocrclass.h>
 #include <tesseract/baseapi.h>
 
+#define ENABLE_DEBUG
 
 class TextRecognizer {
 private:
@@ -71,21 +72,34 @@ public:
     void recognize(const cv::Mat& frame, const cv::RotatedRect& rotatedRect) {
         cv::Mat preprocessedImage;
         preprocessImage(frame, rotatedRect, preprocessedImage);
+        std::optional<std::string> bestGuess{std::nullopt};
+        int bestGuessConfidence{};
         for (int i = 0; i < 4; ++i) {
             cv::rotate(preprocessedImage, preprocessedImage, cv::ROTATE_90_CLOCKWISE); // For rotating 90 degrees clockwise
-            // Show the preprocessed image (for debugging)
+            tess.SetImage(preprocessedImage.data, preprocessedImage.cols, preprocessedImage.rows, 1, preprocessedImage.step);
+            char* text = tess.GetUTF8Text();
+            int* confidences = tess.AllWordConfidences();
+            // compute most likely orientation
+            if (confidences[0] > bestGuessConfidence) {
+                bestGuessConfidence = confidences[0];
+                bestGuess = text;
+            }
+#ifdef ENABLE_DEBUG
             cv::namedWindow("Preprocessed Image");
             cv::imshow("Preprocessed Image", preprocessedImage);
             cv::waitKey(0);
             cv::destroyWindow("Preprocessed Image");
-            tess.SetImage(preprocessedImage.data, preprocessedImage.cols, preprocessedImage.rows, 1, preprocessedImage.step);
-            char* text = tess.GetUTF8Text();
-            int* confidences = tess.AllWordConfidences();
             std::cout << "OCR output: " << text;
             std::cout << "Confidence: " << confidences[0] << std::endl;
+#endif
             delete[] text;
             delete[] confidences;
         }
+        if (bestGuess) {
+            std::cout << "Best guess: " << *bestGuess;
+            std::cout << "Confidence: " << bestGuessConfidence << std::endl;
+        }
+        
     }
 };
 
