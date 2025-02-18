@@ -16,10 +16,10 @@ Computer vision application which plays the game "Snatch".
    cd snatchbot
    ```
 2. Create `vcpkg.exe`.
-  ```cmd
-  git clone https://github.com/microsoft/vcpkg.git
-  vcpkg\bootstrap-vcpkg.bat
-  ```
+   ```cmd
+   git clone https://github.com/microsoft/vcpkg.git
+   vcpkg\bootstrap-vcpkg.bat
+   ```
 3. Run `cmake` step, specifying whichever generator or build system you have on your machine.
    ```cmd
    cmake -B build -S . -G "Visual Studio 17 2022" -A x64
