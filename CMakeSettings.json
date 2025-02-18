@@ -1,0 +1,12 @@
+{
+  "configurations": [
+    {
+      "name": "x64-Debug",
+      "configurationType": "Debug",
+      "generator": "Visual Studio 17 2022 Win64",
+      "inheritEnvironments": [ "msvc_x64" ],
+	  "buildRoot": "${projectDir}\\build\\${name}",
+	  "cmakeCommandArgs": "-DCMAKE_TOOLCHAIN_FILE=${projectDir}\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
+    }
+  ]
+}
