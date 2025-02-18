@@ -4,65 +4,67 @@
 #include "TextDetector.h"
 #include "TextRecognizer.h"
 
-int main()
-{
-    cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_WARNING);
-    cv::VideoCapture cap(0); // Open the default video camera
-
-    if (cap.isOpened() == false)
-    {
-        std::cout << "Cannot open the video camera" << std::endl;
-        return -1;
+bool initializeCamera(cv::VideoCapture& cap, const std::string& window_name) {
+    cap.open(0); // open the default video camera
+    if (!cap.isOpened()) {
+        std::cerr << "cannot open camera" << std::endl;
+        return false;
     }
+    double dWidth = cap.get(cv::CAP_PROP_FRAME_WIDTH); // get the width of frames of the video
+    double dHeight = cap.get(cv::CAP_PROP_FRAME_HEIGHT); // get the height of frames of the video
+    std::cout << "Resolution of the video: " << dWidth << " x " << dHeight << std::endl;
+    cv::namedWindow(window_name);
+    return true;
+}
 
-    double dWidth = cap.get(cv::CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
-    double dHeight = cap.get(cv::CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
+void processFrame(cv::Mat& frame) {
+    TextDetector& textDetector = TextDetector::getInstance();
+    TextRecognizer& textRecognizer = TextRecognizer::getInstance();
+    std::vector<cv::RotatedRect> rotatedRectangles;
+    textDetector.detect(frame, rotatedRectangles);
+    for (const auto& rotatedRectangle : rotatedRectangles) {
+        textRecognizer.recognize(frame, rotatedRectangle);
+    }
+    std::cout << "Text recognition complete" << std::endl;
+}
 
-    std::cout << "Resolution of the video : " << dWidth << " x " << dHeight << std::endl;
+void displayButtonOptions() {
+    std::cout << "\n===== Available Actions =====\n";
+    std::cout << "Press Enter: Perform text recognition on the current frame\n";
+    std::cout << "Press Esc: Exit the application\n";
+    std::cout << "=============================\n";
+}
 
+int main() {
+    cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_WARNING); // reduce OpenCV log level
+    cv::VideoCapture cap;
     std::string window_name = "My Camera Feed";
-    cv::namedWindow(window_name); //create a window called "My Camera Feed"
-
-    TextDetector& textDetector{ TextDetector::getInstance() };
-    TextRecognizer& textRecognizer{ TextRecognizer::getInstance() };
-
-    while (true)
-    {
+    if (!initializeCamera(cap, window_name)) return -1;
+    displayButtonOptions();
+    while (true) {
         cv::Mat frame;
-        bool bSuccess = cap.read(frame); // read a new frame from video 
+        bool bSuccess = cap.read(frame); // read a new frame from video
 
-        //Breaking the while loop if the frames cannot be captured
-        if (bSuccess == false)
-        {
-            std::cout << "Video camera is disconnected" << std::endl;
-            std::cin.get(); //Wait for any key press
-            break;
+        if (!bSuccess) {
+            std::cerr << "Video camera is disconnected" << std::endl;
+            return -1;
         }
 
         cv::imshow(window_name, frame);
-        cv::waitKey(0);
+        int key = cv::waitKey(10); // wait for 10 ms until a key is pressed
 
-        std::vector<cv::RotatedRect> rotatedRectangles;
-        textDetector.detect(frame, rotatedRectangles);
-
-        for (const cv::RotatedRect& rotatedRectangle : rotatedRectangles)
-        {
-            textRecognizer.recognize(frame, rotatedRectangle);
-        }
-        std::cout << "One cycle of loop finished" << std::endl;
-
-        //wait for for 10 ms until any key is pressed.  
-        //If the 'Esc' key is pressed, break the while loop.
-        //If any other key is pressed, continue the loop 
-        //If any key is not pressed withing 10 ms, continue the loop 
-        if (cv::waitKey(10) == 27)
-        {
-            std::cout << "Esc key is pressed by user. Stopping the video" << std::endl;
+        switch (key) {
+        case 13: // Enter key
+            processFrame(frame);
+            displayButtonOptions();
             break;
+        case 27: // Escape key
+            std::cout << "Esc key is pressed by user. Stopping the video." << std::endl;
+            return 0;
+        default:
+            continue;
         }
     }
 
     return 0;
-
 }
-
