@@ -1,34 +1,68 @@
-#include <opencv2/opencv.hpp>  // Include OpenCV for image processing
-#include <tesseract/baseapi.h> // Include Tesseract for OCR
-#include <iostream>            // Include iostream for input/output
+#include <iostream>
+#include <opencv2/opencv.hpp>
+#include <tesseract/baseapi.h>
+#include "TextDetector.h"
+#include "TextRecognizer.h"
 
-int main() {
-    // Create a simple black and white image with a single letter 'A'
-    cv::Mat image = cv::Mat::zeros(cv::Size(100, 100), CV_8UC3);
-    cv::putText(image, "A", cv::Point(30, 70), cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(255, 255, 255), 2);
+int main()
+{
+    cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_WARNING);
+    cv::VideoCapture cap(0); // Open the default video camera
 
-    // Convert the image to grayscale
-    cv::Mat gray;
-    cv::cvtColor(image, gray, cv::COLOR_BGR2GRAY);
+    if (cap.isOpened() == false)
+    {
+        std::cout << "Cannot open the video camera" << std::endl;
+        return -1;
+    }
 
-    // Initialize Tesseract OCR engine
-    tesseract::TessBaseAPI ocr;
-    ocr.Init(NULL, "eng", tesseract::OEM_LSTM_ONLY);
+    double dWidth = cap.get(cv::CAP_PROP_FRAME_WIDTH); //get the width of frames of the video
+    double dHeight = cap.get(cv::CAP_PROP_FRAME_HEIGHT); //get the height of frames of the video
 
-    // Set page segmentation mode to SINGLE_CHAR
-    ocr.SetPageSegMode(tesseract::PSM_SINGLE_CHAR);
+    std::cout << "Resolution of the video : " << dWidth << " x " << dHeight << std::endl;
 
-    // Set the image for Tesseract to process
-    ocr.SetImage(gray.data, gray.cols, gray.rows, 1, gray.step);
+    std::string window_name = "My Camera Feed";
+    cv::namedWindow(window_name); //create a window called "My Camera Feed"
 
-    // Get the recognized text
-    char* text = ocr.GetUTF8Text();
-    std::cout << "Recognized Text: " << text << std::endl;
+    TextDetector& textDetector{ TextDetector::getInstance() };
+    TextRecognizer& textRecognizer{ TextRecognizer::getInstance() };
 
-    // Clean up
-    delete[] text;
-    ocr.End();
+    while (true)
+    {
+        cv::Mat frame;
+        bool bSuccess = cap.read(frame); // read a new frame from video 
+
+        //Breaking the while loop if the frames cannot be captured
+        if (bSuccess == false)
+        {
+            std::cout << "Video camera is disconnected" << std::endl;
+            std::cin.get(); //Wait for any key press
+            break;
+        }
+
+        cv::imshow(window_name, frame);
+        cv::waitKey(0);
+
+        std::vector<cv::RotatedRect> rotatedRectangles;
+        textDetector.detect(frame, rotatedRectangles);
+
+        for (const cv::RotatedRect& rotatedRectangle : rotatedRectangles)
+        {
+            textRecognizer.recognize(frame, rotatedRectangle);
+        }
+        std::cout << "One cycle of loop finished" << std::endl;
+
+        //wait for for 10 ms until any key is pressed.  
+        //If the 'Esc' key is pressed, break the while loop.
+        //If any other key is pressed, continue the loop 
+        //If any key is not pressed withing 10 ms, continue the loop 
+        if (cv::waitKey(10) == 27)
+        {
+            std::cout << "Esc key is pressed by user. Stopping the video" << std::endl;
+            break;
+        }
+    }
 
     return 0;
+
 }
 

@@ -21,7 +21,7 @@ link_directories(${Tesseract_LIBRARY_DIRS})
 
 add_executable(${PROJECT_NAME} "src/main.cpp")
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${Tesseract_INCLUDE_DIRS} ${Leptonica_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${Tesseract_INCLUDE_DIRS} ${Leptonica_INCLUDE_DIRS} "${CMAKE_SOURCE_DIR}/include")
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} Tesseract::libtesseract ${Leptonica_LIBRARIES})
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
