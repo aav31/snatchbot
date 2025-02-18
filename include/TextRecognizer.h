@@ -30,24 +30,12 @@ private:
 
     }
 
-public:
-    // Singleton instance
-    static TextRecognizer& getInstance() {
-        static TextRecognizer instance;
-        return instance;
-    }
-
-    // Delete copy constructor and assignment operator
-    TextRecognizer(const TextRecognizer&) = delete;
-    TextRecognizer& operator=(const TextRecognizer&) = delete;
-
-    // Method to recognize text in a given rotated rectangle
-    void recognize(const cv::Mat& frame, const cv::RotatedRect& rotatedRect) {
+    void preprocessImage(const cv::Mat& frame, const cv::RotatedRect& rotatedRect, cv::Mat& preprocessedImage) {
         // Rotate the image
         cv::Mat rotatedImage;
         cv::Mat rotationMatrix = cv::getRotationMatrix2D(rotatedRect.center, rotatedRect.angle, 1.0);
         cv::warpAffine(frame, rotatedImage, rotationMatrix, frame.size(), cv::INTER_CUBIC);
-        
+
         // Crop the image
         cv::Mat croppedImage;
         cv::getRectSubPix(rotatedImage, rotatedRect.size, rotatedRect.center, croppedImage);
@@ -65,17 +53,32 @@ public:
         cv::GaussianBlur(grayImage, blurredImage, cv::Size(5, 5), 0);
 
         // Threshold
-        cv::Mat thresholdImage;
-        cv::threshold(blurredImage, thresholdImage, 90, 255, cv::THRESH_BINARY);
+        cv::threshold(blurredImage, preprocessedImage, 90, 255, cv::THRESH_BINARY);
+    }
 
+public:
+    // Singleton instance
+    static TextRecognizer& getInstance() {
+        static TextRecognizer instance;
+        return instance;
+    }
+
+    // Delete copy constructor and assignment operator
+    TextRecognizer(const TextRecognizer&) = delete;
+    TextRecognizer& operator=(const TextRecognizer&) = delete;
+
+    // Method to recognize text in a given rotated rectangle
+    void recognize(const cv::Mat& frame, const cv::RotatedRect& rotatedRect) {
+        cv::Mat preprocessedImage;
+        preprocessImage(frame, rotatedRect, preprocessedImage);
         for (int i = 0; i < 4; ++i) {
-            cv::rotate(thresholdImage, thresholdImage, cv::ROTATE_90_CLOCKWISE); // For rotating 90 degrees clockwise
+            cv::rotate(preprocessedImage, preprocessedImage, cv::ROTATE_90_CLOCKWISE); // For rotating 90 degrees clockwise
             // Show the preprocessed image (for debugging)
             cv::namedWindow("Preprocessed Image");
-            cv::imshow("Preprocessed Image", thresholdImage);
+            cv::imshow("Preprocessed Image", preprocessedImage);
             cv::waitKey(0);
             cv::destroyWindow("Preprocessed Image");
-            tess.SetImage(thresholdImage.data, thresholdImage.cols, thresholdImage.rows, 1, thresholdImage.step);
+            tess.SetImage(preprocessedImage.data, preprocessedImage.cols, preprocessedImage.rows, 1, preprocessedImage.step);
             char* text = tess.GetUTF8Text();
             int* confidences = tess.AllWordConfidences();
             std::cout << "OCR output: " << text;
