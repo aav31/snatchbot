@@ -4,19 +4,20 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/dnn.hpp>
 
+/**
+ * @class TextDetector
+ * @brief Singleton class for detecting and displaying Bananagrams tiles.
+ *
+ * This class follows the Singleton pattern to ensure that only one instance
+ * of the TextDetector exists. The Singleton pattern is used to manage global
+ * state and resources efficiently.
+ */
 class TextDetector {
-private:
-    static constexpr double aspectRatioLowerBound{ 0.5 };
-    static constexpr double aspectRatioUpperBound{ 1.5 };
-
-    // the below values are good for a camera which is 430mm above the table
-    static constexpr double areaLowerBound{ 100 }; // in pixels
-    static constexpr double areaUpperBound{ 225 }; // in pixels
-    static constexpr int fixedSquareSideLength{ 16 }; // in pixels
-    TextDetector()
-    {
-	}
 public:
+    /**
+     * @brief Provides access to the single instance of the TextDetector class.
+     * @return Reference to the single instance of the TextDetector class.
+     */
     static TextDetector& getInstance() {
         static TextDetector instance;
         return instance;
@@ -25,70 +26,98 @@ public:
     TextDetector(const TextDetector&) = delete;
     TextDetector& operator=(const TextDetector&) = delete;
 
+    /**
+     * @brief Function which detects the tiles from a video frame.
+     * @param frame The frame from the video camera.
+     * @param rotatedRectangles Rotated rectangles containing the scrabble tiles.
+     * @return void.
+     *
+     * The function takes in an empty rotatedRectangles vector and appends to it
+     * rotated rectangles corresponding to the tiles. It expects white tiles
+     * on a completely black background with black letters.
+     */
     void detect(const cv::Mat& frame, std::vector<cv::RotatedRect>& rotatedRectangles) const {
         cv::Mat processedFrame;
+        preprocessImage(frame, processedFrame);
 
+        // Find contours - because there are white tiles on a black background
+        // the contours should be squares
+        std::vector<std::vector<cv::Point>> contours;
+        cv::findContours(processedFrame, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+        for (size_t i = 0; i < contours.size(); ++i) {
+            // Get the rotated rectangle around the square shaped contours
+            cv::RotatedRect rotatedRect = cv::minAreaRect(contours[i]);
+
+            // Only add rectangles with an acceptable aspect ratio
+            float aspectRatio = rotatedRect.size.width / rotatedRect.size.height;
+            if ((aspectRatio > aspectRatioUpperBound) || (aspectRatio < aspectRatioLowerBound)) continue;
+            rotatedRectangles.push_back(rotatedRect);
+        }
+
+        displayDetectedTiles(processedFrame, rotatedRectangles);
+        std::cout << "Number of tiles recognized: " << std::size(rotatedRectangles) << std::endl;
+    }
+
+private:
+    static constexpr double aspectRatioLowerBound{ 0.8 };
+    static constexpr double aspectRatioUpperBound{ 1.2 };
+    
+    /**
+     * @brief Displays rotated rectangles of detected tiles on the preprocessed image.
+     * @param processedFrame The preprocessed image.
+     * @param rotatedRectangles Rotated rectangles containing the scrabble tiles.
+     * @return void.
+     */
+    void displayDetectedTiles(const cv::Mat& processedFrame, const std::vector<cv::RotatedRect>& rotatedRectangles) const {
+        // Convert the processed (grayscale) image back to a colour image for visualisation
+        cv::Mat colourProcessedFrame;
+        cv::cvtColor(processedFrame, colourProcessedFrame, cv::COLOR_GRAY2BGR);
+
+        for (const auto& rotatedRect : rotatedRectangles) {
+            cv::Point2f vertices[4]; // get vertices of rect for drawing
+            rotatedRect.points(vertices);
+            for (int j = 0; j < 4; j++) {
+                cv::line(colourProcessedFrame, vertices[j], vertices[(j + 1) % 4], cv::Scalar(0, 255, 0), 2); // Green lines
+            }
+        }
+
+        // Display the result
+        cv::imshow("Detected Tiles", colourProcessedFrame);
+        cv::waitKey(0);
+        cv::destroyWindow("Detected Tiles");
+    }
+
+    /**
+     * @brief Preprocesses a raw image into an image ready for contour detection.
+     * @param frame The raw image from the camera.
+     * @param processedFrame The preprocessed black and white image for contour detection.
+     * @return void.
+     * 
+     * We need to convert the frame to white shapes on a black background before we do
+     * contour detection.
+     */
+    void preprocessImage(const cv::Mat& frame, cv::Mat& processedFrame) const {
         // Convert to gray
         cv::cvtColor(frame, processedFrame, cv::COLOR_BGR2GRAY);
 
         // Blur the image to reduce noise
         cv::GaussianBlur(processedFrame, processedFrame, cv::Size(5, 5), 0);
-        
-        // Apply thresholding OR edge detection
-        //cv::threshold(processedFrame, processedFrame, 90, 255, cv::THRESH_BINARY_INV);
-        cv::Canny(processedFrame, processedFrame, 70, 200);
 
-        // Find contours
-        std::vector<std::vector<cv::Point>> contours;
-        cv::findContours(processedFrame, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
-        
-        // Convert the processed (grayscale) image back to a colour image for visualisation
-        cv::Mat colourProcessedFrame;
-        cv::cvtColor(processedFrame, colourProcessedFrame, cv::COLOR_GRAY2BGR);
-        
-        // Draw the contours on the colour image (in blue)
-        //cv::drawContours(colourProcessedFrame, contours, -1, cv::Scalar(255, 0, 0));
-
-        for (size_t i = 0; i < contours.size(); ++i) {
-            // Get the rotated rectangle
-            cv::RotatedRect rotatedRect = cv::minAreaRect(contours[i]);
-
-            float aspectRatio = rotatedRect.size.width / rotatedRect.size.height;
-            float area = rotatedRect.size.width * rotatedRect.size.height;
-
-            // if it doesn't smell like a scrabble tile skip it
-            if ((aspectRatio > aspectRatioUpperBound) 
-                || (aspectRatio < aspectRatioLowerBound) 
-                || (area < areaLowerBound) 
-                || (area > areaUpperBound)) continue;
-            
-            // make sure fixed boxes are drawn around tiles
-            cv::Size fixedSize(fixedSquareSideLength, fixedSquareSideLength);
-            rotatedRect.size = fixedSize;
-
-            // add the rectangle
-            rotatedRectangles.push_back(rotatedRect);
-
-            // Get the vertices of the rotated rectangle for drawing
-            cv::Point2f vertices[4];
-            rotatedRect.points(vertices);
-            for (int j = 0; j < 4; j++) {
-                cv::line(colourProcessedFrame, vertices[j], vertices[(j + 1) % 4], cv::Scalar(0, 255, 0), 2); // Green lines
-            }
-
-
-            // Add text
-            std::stringstream areaText;
-            areaText << "Area: " << std::fixed << std::setprecision(2) << area;
-            cv::Point2f textPosition(rotatedRect.center.x, rotatedRect.center.y);
-            cv::putText(colourProcessedFrame, areaText.str(), textPosition, cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(0, 255, 0), 1);
-        }
-        // Display the result
-        cv::imshow("Detected Tiles", colourProcessedFrame);
-        cv::waitKey(0);
-        cv::destroyWindow("Detected Tiles");
-        std::cout << "Number of tiles recognized: " << std::size(rotatedRectangles) << std::endl;
+        // Apply thresholding OR canny edge detection
+        cv::threshold(processedFrame, processedFrame, 200, 255, cv::THRESH_BINARY);
     }
+
+    /**
+     * @brief Private constructor to prevent instantiation.
+     *
+     * The constructor is private to ensure that only the static getInstance() method
+     * can create an instance of the TextDetector class.
+     */
+    TextDetector()
+    {
+	}
+
 };
 
 #endif
