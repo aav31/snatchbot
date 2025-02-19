@@ -1,22 +1,19 @@
 #ifndef TEXT_RECOGNIZER_H
 #define TEXT_RECOGNIZER_H
 #include <iostream>
+#include <cmath>
 #include <fstream>
 #include <opencv2/opencv.hpp>
 #include <leptonica/allheaders.h>
 #include <tesseract/ocrclass.h>
 #include <tesseract/baseapi.h>
 
-#define ENABLE_DEBUG
 
 class TextRecognizer {
 private:
     tesseract::TessBaseAPI tess;
     static constexpr int userDefinedDpi{ 300 };
     static constexpr double tileLengthInches{ 0.708661 };
-    static constexpr int tileLengthPixels{ 16 };
-    static constexpr double tileDpi{ tileLengthPixels / tileLengthInches };
-    static constexpr double scaleFactor{ userDefinedDpi / tileDpi };
 
     // Private constructor
     TextRecognizer(const char* dataPath = NULL, const std::string& lang = "eng") {
@@ -26,8 +23,9 @@ private:
         tess.SetPageSegMode(tesseract::PSM_SINGLE_CHAR);  // Detect orientation AND recognize text
 
         tess.SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-        const char* userDefinedDpiString{ std::to_string(tileDpi).c_str() };
+        const char* userDefinedDpiString{ std::to_string(userDefinedDpi).c_str() };
         tess.SetVariable("user_defined_dpi", userDefinedDpiString );
+        tess.SetVariable("debug_file", "NUL");
 
     }
 
@@ -43,6 +41,9 @@ private:
 
         // Resize
         cv::Mat resizedImage;
+        const double tileLengthPixels{ rotatedRect.size.width };
+        const double tileDpi{ tileLengthPixels / tileLengthInches };
+        const double scaleFactor{ userDefinedDpi / tileDpi };
         cv::resize(croppedImage, resizedImage, cv::Size(), scaleFactor, scaleFactor, cv::INTER_CUBIC);
 
         // Convert to grayscale
@@ -54,7 +55,7 @@ private:
         cv::GaussianBlur(grayImage, blurredImage, cv::Size(5, 5), 0);
 
         // Threshold
-        cv::threshold(blurredImage, preprocessedImage, 90, 255, cv::THRESH_BINARY);
+        cv::threshold(blurredImage, preprocessedImage, 150, 255, cv::THRESH_BINARY);
     }
 
 public:
@@ -84,18 +85,16 @@ public:
                 bestGuessConfidence = confidences[0];
                 bestGuess = text;
             }
-#ifdef ENABLE_DEBUG
-            cv::namedWindow("Preprocessed Image");
-            cv::imshow("Preprocessed Image", preprocessedImage);
-            cv::waitKey(0);
-            cv::destroyWindow("Preprocessed Image");
-            std::cout << "OCR output: " << text;
-            std::cout << "Confidence: " << confidences[0] << std::endl;
-#endif
+            //cv::namedWindow("Preprocessed Image");
+            //cv::imshow("Preprocessed Image", preprocessedImage);
+            //cv::waitKey(0);
+            //cv::destroyWindow("Preprocessed Image");
+            //std::cout << "OCR output: " << text;
+            //std::cout << "Confidence: " << confidences[0] << std::endl;
             delete[] text;
             delete[] confidences;
         }
-        if (bestGuess) {
+        if ((bestGuess) && (bestGuessConfidence > 50)) {
             std::cout << "Best guess: " << *bestGuess;
             std::cout << "Confidence: " << bestGuessConfidence << std::endl;
         }
