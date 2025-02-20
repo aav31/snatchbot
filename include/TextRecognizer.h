@@ -1,6 +1,17 @@
+/**
+ * @file text_recognizer.h
+ * @brief Header file for the TextRecognizer class.
+ *
+ * This file contains the declaration of the TextRecognizer class:
+ * Singleton class for generating the current words on the board.
+ *
+ * @author Aled Vaghela
+ */
+
 #ifndef TEXT_RECOGNIZER_H
 #define TEXT_RECOGNIZER_H
 #include <iostream>
+#include <algorithm>
 #include <cmath>
 #include <fstream>
 #include <opencv2/opencv.hpp>
@@ -11,16 +22,18 @@
 
 /**
  * @class TextRecognizer
- * @brief Singleton class for recognizing text on Bananagrams tiles.
+ * @brief Singleton class for generating the current words on the board.
  *
- * This class follows the Singleton pattern to ensure that only one instance
- * of the TextRecognizer exists. The Singleton pattern is used to manage global
- * state and resources efficiently.
+ * This class follows the Singleton pattern to ensure only one instance exists.
+ * Recognizes single characters using tesseract OCR within given rotated rectangles 
+ * provided from the TextDetector class. It then converts them to the current words
+ * which have been played.
  */
 class TextRecognizer {
 public:
     /**
      * @brief Provides access to the single instance of the TextRecognizer class.
+     * 
      * @return Reference to the single instance of the TextRecognizer class.
      */
     static TextRecognizer& getInstance() {
@@ -28,52 +41,37 @@ public:
         return instance;
     }
 
-    // Delete copy constructor and assignment operator
     TextRecognizer(const TextRecognizer&) = delete;
     TextRecognizer& operator=(const TextRecognizer&) = delete;
 
     /**
-     * @brief Method to recognize text in a given rotated rectangle.
-     * @param frame The frame from the video camera.
-     * @param rotatedRect The rotated rectangle containing the tile.
-     * @return void.
+     * @brief Generates current words on the board from a raw frame and locations of tiles.
+     * 
+     * @param frame The raw frame from the video camera.
+     * @param rotatedRectangles Represents the location of the tiles within the frame.
+     * @return Vector containing the words currently on the board.
      */
-    void recognize(const cv::Mat& frame, const cv::RotatedRect& rotatedRect) {
-        cv::Mat preprocessedImage;
-        preprocessImage(frame, rotatedRect, preprocessedImage);
-        std::optional<std::string> bestGuess{ std::nullopt };
-        int bestGuessConfidence{};
-
-        for (int i = 0; i < 4; ++i) {
-            cv::rotate(preprocessedImage, preprocessedImage, cv::ROTATE_90_CLOCKWISE); // For rotating 90 degrees clockwise
-            tess.SetImage(preprocessedImage.data, preprocessedImage.cols, preprocessedImage.rows, 1, preprocessedImage.step);
-            char* text = tess.GetUTF8Text();
-            int* confidences = tess.AllWordConfidences();
-            // Compute the most likely orientation
-            if (confidences[0] > bestGuessConfidence) {
-                bestGuessConfidence = confidences[0];
-                bestGuess = text;
+    std::vector<std::string> generateWords(const cv::Mat& frame, const std::vector<cv::RotatedRect>& rotatedRectangles) {
+        std::vector<std::string> words{};
+        for (const auto& rotatedRectangle: rotatedRectangles) {
+            std::optional<char> letter{ recognizeLetter(frame, rotatedRectangle) };
+            if (letter) {
+                std::string str(1, *letter);
+                words.push_back(str);
             }
-
-            displayTile(preprocessedImage, text, confidences[0]);
-
-            delete[] text;
-            delete[] confidences;
         }
-
-        if ((bestGuess) && (bestGuessConfidence > 50)) {
-            std::cout << "Best guess: " << *bestGuess;
-            std::cout << "Confidence: " << bestGuessConfidence << std::endl;
-        }
+        return words;
     }
 
 private:
     tesseract::TessBaseAPI tess;
     static constexpr int userDefinedDpi{ 300 };
+    static inline const char* userDefinedDpiStr = "300";
     static constexpr double tileLengthInches{ 0.708661 };
 
     /**
      * @brief Private constructor to prevent instantiation.
+     * 
      * @param dataPath The path to the Tesseract data files.
      * @param lang The language for Tesseract OCR.
      */
@@ -84,19 +82,63 @@ private:
         tess.SetPageSegMode(tesseract::PSM_SINGLE_CHAR);  // Detect orientation AND recognize text
 
         tess.SetVariable("tessedit_char_whitelist", "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-        const char* userDefinedDpiString{ std::to_string(userDefinedDpi).c_str() };
-        tess.SetVariable("user_defined_dpi", userDefinedDpiString);
+        tess.SetVariable("user_defined_dpi", userDefinedDpiStr);
         tess.SetVariable("debug_file", "NUL");
     }
 
     /**
-     * @brief Preprocesses an image for text recognition.
-     * @param frame The raw image from the camera.
+     * @brief Recognizes a single character within a given rotated rectangle.
+     *
+     * @param frame The raw frame from the video camera.
      * @param rotatedRect The rotated rectangle containing the tile.
-     * @param preprocessedImage The preprocessed image ready for OCR.
-     * @return void.
+     * @return An optional single character if text can be recognized.
      */
-    void preprocessImage(const cv::Mat& frame, const cv::RotatedRect& rotatedRect, cv::Mat& preprocessedImage) {
+    std::optional<char> recognizeLetter(const cv::Mat& frame, const cv::RotatedRect& rotatedRect) {
+        constexpr int CONFIDENCE_THRESHOLD = 50; // Define a clear threshold
+        cv::Mat preprocessedImage = preprocessImage(frame, rotatedRect);
+
+        std::optional<char> bestGuess = std::nullopt;
+        int bestGuessConfidence = 0;
+
+        for (int i = 0; i < 4; ++i) {
+            cv::rotate(preprocessedImage, preprocessedImage, cv::ROTATE_90_CLOCKWISE);
+
+            // Perform OCR
+            tess.SetImage(preprocessedImage.data, preprocessedImage.cols, preprocessedImage.rows, 1, preprocessedImage.step);
+            char* text = tess.GetUTF8Text();
+            int* confidences = tess.AllWordConfidences();
+
+            // Ensure text has two characters - the letter and \n
+            if (text != nullptr && confidences != nullptr && std::strlen(text) == 2) {
+                if (confidences[0] > bestGuessConfidence) {
+                    bestGuessConfidence = confidences[0];
+                    bestGuess = text[0]; // Store the best recognized character
+                }
+            }
+
+            displayTile(preprocessedImage, text, confidences ? confidences[0] : 0);
+
+            tess.Clear();
+        }
+
+        if (bestGuess && (bestGuessConfidence > CONFIDENCE_THRESHOLD)) {
+            std::cout << "Best guess: " << *bestGuess << " (Confidence: " << bestGuessConfidence << ")" << std::endl;
+            return bestGuess;
+        }
+
+        return std::nullopt;
+    }
+
+    /**
+     * @brief Preprocesses an image for text recognition.
+     * 
+     * @param frame The raw frame from the video.
+     * @param rotatedRect The rotated rectangle containing the tile.
+     * @return The preprocessed image ready for OCR.
+     */
+    cv::Mat preprocessImage(const cv::Mat& frame, const cv::RotatedRect& rotatedRect) const {
+        cv::Mat preprocessedImage;
+        
         // Rotate the image
         cv::Mat rotatedImage;
         cv::Mat rotationMatrix = cv::getRotationMatrix2D(rotatedRect.center, rotatedRect.angle, 1.0);
@@ -123,16 +165,19 @@ private:
 
         // Threshold
         cv::threshold(blurredImage, preprocessedImage, 150, 255, cv::THRESH_BINARY);
+
+        return preprocessedImage;
     }
 
     /**
-     * @brief Displays the tile image with OCR results and confidence in the top left corner in green.
+     * @brief Displays the tile image with tesseract OCR results.
+     * 
      * @param preprocessedImage The preprocessed image of the tile.
-     * @param text The recognized text.
-     * @param confidence The confidence level of the recognized text.
+     * @param text The raw output from tesseract OCR.
+     * @param confidence The confidence level of the recognized text from tesseract OCR.
      * @return void.
      */
-    void displayTile(const cv::Mat& preprocessedImage, const char* text, int confidence) {
+    void displayTile(const cv::Mat& preprocessedImage, const char* text, int confidence) const {
         // Convert the grayscale image back to color
         cv::Mat imageWithText;
         cv::cvtColor(preprocessedImage, imageWithText, cv::COLOR_GRAY2BGR);
@@ -145,9 +190,10 @@ private:
         double fontScale = 0.5;  // Smaller font size
         int thickness = 1;
         cv::Point textOrg(10, 20); // Top left corner
+        cv::Scalar greenColour(0, 255, 0);
 
         // Put the text on the image
-        cv::putText(imageWithText, displayText, textOrg, fontFace, fontScale, cv::Scalar(0, 255, 0), thickness);
+        cv::putText(imageWithText, displayText, textOrg, fontFace, fontScale, greenColour, thickness);
 
         // Display the result
         cv::namedWindow("Preprocessed Image");

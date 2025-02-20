@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include <opencv2/opencv.hpp>
 #include <tesseract/baseapi.h>
 #include "TextDetector.h"
@@ -20,17 +21,18 @@ bool initializeCamera(cv::VideoCapture& cap, const std::string& window_name) {
 void processFrame(cv::Mat& frame) {
     TextDetector& textDetector = TextDetector::getInstance();
     TextRecognizer& textRecognizer = TextRecognizer::getInstance();
-    std::vector<cv::RotatedRect> rotatedRectangles = textDetector.getTileLocations(frame);
-    for (const auto& rotatedRectangle : rotatedRectangles) {
-        textRecognizer.recognize(frame, rotatedRectangle);
-    }
-    std::cout << "Text recognition complete" << std::endl;
+    // SnatchableWordGenerator& snatchableWordGenerator = SnatchableWordGenerator::getInstance();
+    std::vector<cv::RotatedRect> tileLocations = textDetector.getTileLocations(frame);
+    std::vector<std::string> words = textRecognizer.generateWords(frame, tileLocations);
+    std::for_each(words.begin(), words.end(), [](std::string x) { std::cout << x << std::endl; });
+    //std::vector<std::string> snatchableWords = snatchableWordGenerator.generateSnatchableWords(words);
+    std::cout << "Frame processed." << std::endl;
 }
 
 void displayButtonOptions() {
     std::cout << "\n===== Available Actions =====\n";
-    std::cout << "Press Enter: Perform text recognition on the current frame\n";
-    std::cout << "Press Esc: Exit the application\n";
+    std::cout << "Press Enter: Perform text recognition on the current frame.\n";
+    std::cout << "Press Esc: Exit the application.\n";
     std::cout << "=============================\n";
 }
 
