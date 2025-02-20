@@ -20,8 +20,7 @@ bool initializeCamera(cv::VideoCapture& cap, const std::string& window_name) {
 void processFrame(cv::Mat& frame) {
     TextDetector& textDetector = TextDetector::getInstance();
     TextRecognizer& textRecognizer = TextRecognizer::getInstance();
-    std::vector<cv::RotatedRect> rotatedRectangles;
-    textDetector.detect(frame, rotatedRectangles);
+    std::vector<cv::RotatedRect> rotatedRectangles = textDetector.getTileLocations(frame);
     for (const auto& rotatedRectangle : rotatedRectangles) {
         textRecognizer.recognize(frame, rotatedRectangle);
     }
