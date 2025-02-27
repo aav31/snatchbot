@@ -1,6 +1,7 @@
 {
   "dependencies": [
     "tesseract",
-    "opencv"
+    "opencv",
+    "gtest"
   ]
 }

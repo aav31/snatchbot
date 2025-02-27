@@ -29,3 +29,26 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
     "${CMAKE_SOURCE_DIR}/eng.traineddata" $<TARGET_FILE_DIR:${PROJECT_NAME}>/tessdata/eng.traineddata)
 
+
+find_package(GTest REQUIRED)
+
+#if(NOT GTest_INCLUDE_DIRS OR NOT GTest_LIBRARIES)
+#    message(WARNING "GTest paths are missing, manually setting them.")
+#    set(GTest_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/build/x64-Debug/vcpkg_installed/x64-windows/include")
+#    set(GTest_LIBRARIES "${CMAKE_SOURCE_DIR}/build/x64-Debug/vcpkg_installed/x64-windows/lib/gtest.lib")
+#endif()
+
+#message(STATUS "GTest include dir: ${GTest_INCLUDE_DIRS}")
+#message(STATUS "GTest libraries: ${GTest_LIBRARIES}")
+
+enable_testing()
+
+add_executable(${PROJECT_NAME}_tests "tests/test_main.cpp")
+target_link_libraries(${PROJECT_NAME}_tests
+  PRIVATE
+    GTest::gtest
+    GTest::gtest_main
+)
+#target_include_directories(${PROJECT_NAME}_tests PRIVATE ${GTest_INCLUDE_DIRS})
+#target_link_libraries(${PROJECT_NAME}_tests PRIVATE ${GTest_LIBRARIES})
+add_test(NAME ${PROJECT_NAME}_tests COMMAND ${PROJECT_NAME}_tests)
