@@ -43,11 +43,13 @@ find_package(GTest REQUIRED)
 
 enable_testing()
 
-add_executable(${PROJECT_NAME}_tests "tests/test_main.cpp")
+add_executable(${PROJECT_NAME}_tests "tests/test_main.cpp" "tests/test_letter_node.cpp" "tests/test_letter_node_utils.cpp")
+target_include_directories(${PROJECT_NAME}_tests PRIVATE "${CMAKE_SOURCE_DIR}/include")
 target_link_libraries(${PROJECT_NAME}_tests
   PRIVATE
     GTest::gtest
     GTest::gtest_main
+    ${OpenCV_LIBS} 
 )
 #target_include_directories(${PROJECT_NAME}_tests PRIVATE ${GTest_INCLUDE_DIRS})
 #target_link_libraries(${PROJECT_NAME}_tests PRIVATE ${GTest_LIBRARIES})
