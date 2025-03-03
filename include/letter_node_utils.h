@@ -65,11 +65,38 @@ namespace LetterNodeUtils {
         return boundingBox.size.area() < threshold;
     }
 
-    std::vector<std::unordered_set<LetterNode>> findConnectedComponents() {
-        // TODO
-        // eventually want std::vector<std::string> words
-        std::vector<std::unordered_set<LetterNode>> result;
-        return result;
+    /**
+     * @brief Create connected component (word) by performing a depth first search.
+     *
+     */
+    void dfs(const LetterNode u, const std::unordered_map<LetterNode, std::unordered_set<LetterNode>>& graph, std::unordered_set<LetterNode>& visited, std::string& word) {
+        visited.insert(u);
+        word += u.letter;
+        for (const LetterNode& v : graph.at(u)) {
+            if (visited.contains(v)) {
+                continue;
+            }
+            else {
+                dfs(v, graph, visited, word);
+            }
+        }
+    }
+
+    std::vector<std::string> findConnectedComponents(const std::unordered_map<LetterNode, std::unordered_set<LetterNode>>& graph) {
+        std::unordered_set<LetterNode> visited{};
+        std::vector<std::string> words{};
+        for (const auto& x : graph) {
+            LetterNode u = x.first;
+            if (visited.contains(u)) { 
+                continue;
+            }
+            else {
+                std::string word = "";
+                dfs(u, graph, visited, word);
+                words.push_back(word);
+            }
+        }
+        return words;
     }
 }
 

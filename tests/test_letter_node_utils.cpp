@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include "letter_node.h"
 #include "letter_node_utils.h"
 
@@ -57,4 +58,67 @@ TEST(LetterNodeUtilsTest, BoundingBoxAdjacencyStrategy) {
     EXPECT_TRUE(LetterNodeUtils::boundingBoxAdjacencyStrategy(A, B)) << "Tiles are horizonally right next to each other";
     EXPECT_TRUE(LetterNodeUtils::boundingBoxAdjacencyStrategy(A, C)) << "Tiles are vertically right next to each other";
     EXPECT_FALSE(LetterNodeUtils::boundingBoxAdjacencyStrategy(C, B)) << "Tiles are diagonal from each other";
+}
+
+class LetterNodeUtilsFindConnectedComponentsTest : public ::testing::Test {
+protected:
+    LetterNode a;
+    LetterNode b;
+    LetterNode c;
+    LetterNode d;
+    LetterNode e;
+    LetterNode f;
+
+    void SetUp() override {
+        cv::RotatedRect rect(cv::Point2f(0, 0), cv::Size2f(0, 0), 0.0);
+        a = LetterNode('A', rect);
+        b = LetterNode('B', rect);
+        c = LetterNode('C', rect);
+        d = LetterNode('D', rect);
+        e = LetterNode('E', rect);
+        f = LetterNode('F', rect);
+    }
+};
+
+TEST_F(LetterNodeUtilsFindConnectedComponentsTest, EmptyGraph) {
+    std::unordered_map<LetterNode, std::unordered_set<LetterNode>> graph;
+    std::vector<std::string> words = LetterNodeUtils::findConnectedComponents(graph);
+    EXPECT_EQ(std::size(words), 0);
+}
+
+TEST_F(LetterNodeUtilsFindConnectedComponentsTest, Disconnected) {
+    std::unordered_map<LetterNode, std::unordered_set<LetterNode>> graph;
+    graph[a] = { a };
+    graph[b] = { b };
+    graph[c] = { c };
+    std::vector<std::string> words = LetterNodeUtils::findConnectedComponents(graph);
+    EXPECT_EQ(std::size(words), 3);
+    EXPECT_TRUE(std::find(words.begin(), words.end(), "A") != words.end()) << "'A' is missing";
+    EXPECT_TRUE(std::find(words.begin(), words.end(), "B") != words.end()) << "'B' is missing";
+    EXPECT_TRUE(std::find(words.begin(), words.end(), "C") != words.end()) << "'C' is missing";
+}
+
+TEST_F(LetterNodeUtilsFindConnectedComponentsTest, FullyConnected) {
+    std::unordered_map<LetterNode, std::unordered_set<LetterNode>> graph;
+    graph[a] = { a, b, c };
+    graph[b] = { a, b, c };
+    graph[c] = { a, b, c };
+    std::vector<std::string> words = LetterNodeUtils::findConnectedComponents(graph);
+    EXPECT_EQ(std::size(words), 1);
+    EXPECT_TRUE(std::find(words.begin(), words.end(), "ABC") != words.end()) << "'ABC' is missing";
+}
+
+TEST_F(LetterNodeUtilsFindConnectedComponentsTest, Complex) {
+    std::unordered_map<LetterNode, std::unordered_set<LetterNode>> graph;
+    graph[a] = { a, b, c };
+    graph[b] = { b, a };
+    graph[c] = { c, b };
+    graph[d] = { d };
+    graph[e] = { e, f };
+    graph[f] = { f, e };
+    std::vector<std::string> words = LetterNodeUtils::findConnectedComponents(graph);
+    EXPECT_EQ(std::size(words), 3);
+    EXPECT_TRUE(std::find(words.begin(), words.end(), "ABC") != words.end()) << "'ABC' is missing";
+    EXPECT_TRUE(std::find(words.begin(), words.end(), "D") != words.end()) << "'D' is missing";
+    EXPECT_TRUE(std::find(words.begin(), words.end(), "EF") != words.end()) << "'EF' is missing";
 }
