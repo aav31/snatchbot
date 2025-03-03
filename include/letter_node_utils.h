@@ -1,5 +1,5 @@
 /**
- * @file letter_node.h
+ * @file letter_node_utils.h
  * @brief Header file for the LetterNode related functions.
  *
  * This file contains graph based utility functions related to the 
@@ -66,8 +66,14 @@ namespace LetterNodeUtils {
     }
 
     /**
-     * @brief Create connected component (word) by performing a depth first search.
-     *
+     * @brief Helper function to perform depth first search on a graph node.
+     * 
+     * This function helps find each connected component represented as a word.
+     * 
+     * @param u The node on which to start the depth first search.
+     * @param graph The graph on which to perform the depth first search.
+     * @param visited Nodes which have been visited and therefore do not want to visit again.
+     * @param word Representing a connected component within the graph.
      */
     void dfs(const LetterNode u, const std::unordered_map<LetterNode, std::unordered_set<LetterNode>>& graph, std::unordered_set<LetterNode>& visited, std::string& word) {
         visited.insert(u);
@@ -82,6 +88,15 @@ namespace LetterNodeUtils {
         }
     }
 
+    /**
+     * @brief Converts the letter node graph into the of connected components.
+     * 
+     * Each connected component is a word. Each word is formed by going through
+     * each node and performing a depth first search.
+     * 
+     * @param graph An adjacency representation of a graph.
+     * @return A vector of words representing the connected components.
+     */
     std::vector<std::string> findConnectedComponents(const std::unordered_map<LetterNode, std::unordered_set<LetterNode>>& graph) {
         std::unordered_set<LetterNode> visited{};
         std::vector<std::string> words{};

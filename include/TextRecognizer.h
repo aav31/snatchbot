@@ -18,6 +18,8 @@
 #include <leptonica/allheaders.h>
 #include <tesseract/ocrclass.h>
 #include <tesseract/baseapi.h>
+#include "letter_node.h"
+#include "letter_node_utils.h"
 
 
 /**
@@ -52,14 +54,16 @@ public:
      * @return Vector containing the words currently on the board.
      */
     std::vector<std::string> generateWords(const cv::Mat& frame, const std::vector<cv::RotatedRect>& rotatedRectangles) {
-        std::vector<std::string> words{};
+        std::vector<LetterNode> letterNodes{};
         for (const auto& rotatedRectangle: rotatedRectangles) {
             std::optional<char> letter{ recognizeLetter(frame, rotatedRectangle) };
             if (letter) {
-                std::string str(1, *letter);
-                words.push_back(str);
+                LetterNode letterNode{ *letter, rotatedRectangle };
+                letterNodes.push_back(letterNode);
             }
         }
+        std::unordered_map<LetterNode, std::unordered_set<LetterNode>> letterNodeGraph{ LetterNodeUtils::createLetterNodeGraph(letterNodes, LetterNodeUtils::boundingBoxAdjacencyStrategy) };
+        std::vector<std::string> words{ LetterNodeUtils::findConnectedComponents(letterNodeGraph)};
         return words;
     }
 
