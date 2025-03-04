@@ -72,13 +72,14 @@ private:
 	 * @param dictionaryPath Path to the dictionary file.
 	 * @throw std::runtime_error If cannot initialize.
 	 */
-    SnatchableWordGenerator(const char* dictionaryPath = "collins_scrabble_words_2019.txt") {
+    SnatchableWordGenerator(const char* dictionaryPath = "words_popular.txt") {
         std::ifstream infile(dictionaryPath);
 		std::string word;
 		if (infile.is_open()) {
 			while (std::getline(infile, word)) {
 				// snatchable words must be at least length three
 				if (std::size(word) < 3) { continue; }
+				std::transform(word.begin(), word.end(), word.begin(), [](char c) { return std::toupper(c); });
 				std::string sortedWord = word;
 				std::sort(sortedWord.begin(), sortedWord.end());
 				sortedStringToAnagrams[sortedWord].push_back(word);
@@ -105,7 +106,7 @@ private:
 		}
 		else if (i == 0) {
 			result.push_back({});
-			result.push_back({words[i]});
+			result.push_back({words[0]});
 			return result;
 		}
 		else {

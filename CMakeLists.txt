@@ -29,7 +29,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
     "${CMAKE_SOURCE_DIR}/resources/eng.traineddata" $<TARGET_FILE_DIR:${PROJECT_NAME}>/tessdata/eng.traineddata
     COMMAND ${CMAKE_COMMAND} -E copy
-    "${CMAKE_SOURCE_DIR}/resources/collins_scrabble_words_2019.txt" $<TARGET_FILE_DIR:${PROJECT_NAME}>/collins_scrabble_words_2019.txt
+    "${CMAKE_SOURCE_DIR}/resources/words_popular.txt" $<TARGET_FILE_DIR:${PROJECT_NAME}>/words_popular.txt
 )
 
 
