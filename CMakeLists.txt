@@ -27,7 +27,7 @@ target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS} Tesseract::libtesseract ${L
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${PROJECT_NAME}>/tessdata
     COMMAND ${CMAKE_COMMAND} -E copy
-    "${CMAKE_SOURCE_DIR}/eng.traineddata" $<TARGET_FILE_DIR:${PROJECT_NAME}>/tessdata/eng.traineddata
+    "${CMAKE_SOURCE_DIR}/resources/eng.traineddata" $<TARGET_FILE_DIR:${PROJECT_NAME}>/tessdata/eng.traineddata
     COMMAND ${CMAKE_COMMAND} -E copy
     "${CMAKE_SOURCE_DIR}/resources/collins_scrabble_words_2019.txt" $<TARGET_FILE_DIR:${PROJECT_NAME}>/collins_scrabble_words_2019.txt
 )
