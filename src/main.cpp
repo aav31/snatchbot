@@ -1,10 +1,27 @@
+/**
+ * @file main.cpp
+ * @brief Main application for real-time text detection and recognition.
+ *
+ * This program captures video from the default camera, detects text regions,
+ * and recognizes text in those regions using OpenCV and Tesseract OCR.
+ *
+ * @author Aled Vaghela
+ */
+
 #include <iostream>
 #include <algorithm>
 #include <opencv2/opencv.hpp>
 #include <tesseract/baseapi.h>
-#include "TextDetector.h"
-#include "TextRecognizer.h"
+#include "text_detector.h"
+#include "text_recognizer.h"
 
+/**
+ * @brief Initializes the camera and creates a window for displaying the video feed.
+ *
+ * @param cap Reference to the VideoCapture object.
+ * @param window_name Name of the display window.
+ * @return True if the camera is successfully initialized, false otherwise.
+ */
 bool initializeCamera(cv::VideoCapture& cap, const std::string& window_name) {
     cap.open(0); // open the default video camera
     if (!cap.isOpened()) {
@@ -18,6 +35,14 @@ bool initializeCamera(cv::VideoCapture& cap, const std::string& window_name) {
     return true;
 }
 
+/**
+ * @brief Processes a video frame by detecting and recognizing text.
+ *
+ * This function uses a singleton TextDetector to locate text regions in the frame
+ * and a singleton TextRecognizer to extract words from those regions.
+ *
+ * @param frame Reference to the video frame to be processed.
+ */
 void processFrame(cv::Mat& frame) {
     TextDetector& textDetector = TextDetector::getInstance();
     TextRecognizer& textRecognizer = TextRecognizer::getInstance();
@@ -29,6 +54,9 @@ void processFrame(cv::Mat& frame) {
     std::cout << "Frame processed." << std::endl;
 }
 
+/**
+ * @brief Displays available button options for user interaction.
+ */
 void displayButtonOptions() {
     std::cout << "\n===== Available Actions =====\n";
     std::cout << "Press Enter: Perform text recognition on the current frame.\n";
@@ -36,6 +64,14 @@ void displayButtonOptions() {
     std::cout << "=============================\n";
 }
 
+/**
+ * @brief Main function to run the real-time text detection and recognition application.
+ *
+ * This function initializes the camera, captures video frames, and allows the user
+ * to perform text recognition or exit using keyboard input.
+ *
+ * @return 0 on successful execution, -1 on failure.
+ */
 int main() {
     cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_WARNING); // reduce OpenCV log level
     cv::VideoCapture cap;
