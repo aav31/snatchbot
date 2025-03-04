@@ -54,8 +54,11 @@ void processFrame(cv::Mat& frame) {
     SnatchableWordGenerator& snatchableWordGenerator = SnatchableWordGenerator::getInstance();
     std::vector<cv::RotatedRect> tileLocations = textDetector.getTileLocations(frame);
     std::vector<std::string> words = textRecognizer.generateWords(frame, tileLocations);
+    std::cout << "Words:\n";
     std::for_each(words.begin(), words.end(), [](std::string x) { std::cout << x << std::endl; });
-    //std::vector<std::string> snatchableWords = snatchableWordGenerator.generateSnatchableWords(words);
+    std::vector<std::string> snatchableWords = snatchableWordGenerator.generateSnatchableWords(words);
+    std::cout << "Snatchable words:\n";
+    std::for_each(snatchableWords.begin(), snatchableWords.end(), [](std::string x) { std::cout << x << std::endl; });
     std::cout << "Frame processed." << std::endl;
 }
 
