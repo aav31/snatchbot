@@ -17,23 +17,27 @@
 #include "snatchable_word_generator.h"
 
 /**
- * @brief Initializes the camera and creates a window for displaying the video feed.
+ * @brief Initializes the camera and text processing tools.
  *
  * @param cap Reference to the VideoCapture object.
  * @param window_name Name of the display window.
- * @return True if the camera is successfully initialized, false otherwise.
+ * @throw std::runtime_error If cannot initialize.
  */
-bool initializeCamera(cv::VideoCapture& cap, const std::string& window_name) {
-    cap.open(0); // open the default video camera
+void initialize(cv::VideoCapture& cap, const std::string& window_name) {
+    // initialize camera
+    cap.open(0); // default video camera
     if (!cap.isOpened()) {
-        std::cerr << "cannot open camera" << std::endl;
-        return false;
+        throw std::runtime_error("Cannot open camera.");
     }
-    double dWidth = cap.get(cv::CAP_PROP_FRAME_WIDTH); // get the width of frames of the video
-    double dHeight = cap.get(cv::CAP_PROP_FRAME_HEIGHT); // get the height of frames of the video
+    double dWidth = cap.get(cv::CAP_PROP_FRAME_WIDTH);
+    double dHeight = cap.get(cv::CAP_PROP_FRAME_HEIGHT);
     std::cout << "Resolution of the video: " << dWidth << " x " << dHeight << std::endl;
     cv::namedWindow(window_name);
-    return true;
+
+    // initialize text processing tools
+    TextDetector::getInstance();
+    TextRecognizer::getInstance();
+    SnatchableWordGenerator::getInstance(); 
 }
 
 /**
@@ -77,7 +81,13 @@ int main() {
     cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_WARNING); // reduce OpenCV log level
     cv::VideoCapture cap;
     std::string window_name = "My Camera Feed";
-    if (!initializeCamera(cap, window_name)) return -1;
+    try {
+        initialize(cap, window_name);
+    }
+    catch (const std::runtime_error& e) {
+        std::cerr << e.what() << std::endl;
+        return -1;
+    }
     displayButtonOptions();
     while (true) {
         cv::Mat frame;
