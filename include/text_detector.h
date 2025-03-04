@@ -7,6 +7,7 @@
  *
  * @author Aled Vaghela
  */
+
 #ifndef TEXT_DETECTOR_H
 #define TEXT_DETECTOR_H
 #include <iostream>

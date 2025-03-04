@@ -14,6 +14,7 @@
 #include <tesseract/baseapi.h>
 #include "text_detector.h"
 #include "text_recognizer.h"
+#include "snatchable_word_generator.h"
 
 /**
  * @brief Initializes the camera and creates a window for displaying the video feed.
@@ -46,7 +47,7 @@ bool initializeCamera(cv::VideoCapture& cap, const std::string& window_name) {
 void processFrame(cv::Mat& frame) {
     TextDetector& textDetector = TextDetector::getInstance();
     TextRecognizer& textRecognizer = TextRecognizer::getInstance();
-    // SnatchableWordGenerator& snatchableWordGenerator = SnatchableWordGenerator::getInstance();
+    SnatchableWordGenerator& snatchableWordGenerator = SnatchableWordGenerator::getInstance();
     std::vector<cv::RotatedRect> tileLocations = textDetector.getTileLocations(frame);
     std::vector<std::string> words = textRecognizer.generateWords(frame, tileLocations);
     std::for_each(words.begin(), words.end(), [](std::string x) { std::cout << x << std::endl; });
