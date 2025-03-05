@@ -17,7 +17,7 @@ The system uses **contour detection** to identify letter tiles, followed by **OC
 
 TODO: Insert Screenshots/Visuals here (showing the recognition process and word suggestions)
 
-## Rules of Snatch
+## Rules of Snatch 📜
 There are many variations of "snatch" (sometimes known as [Anagrams](https://en.wikipedia.org/wiki/Anagrams_(game))), but the version we play at home is as follows.
 1. **Tile Pool Setup**: All tiles are placed face down in a pool at the center of the table. Players take turns flipping over tiles.
 2. **Word Formation**: When a player spots a word of three or more letters, they can form it in two ways:
@@ -51,10 +51,10 @@ TODO: Improve this section, perhaps make it more concise
    cmake --build build --config Debug
    ```
 
-## License
+## License 📄
 
 TODO: Add MIT license
 
-## Tests
+## Tests ✅
 
 TODO: Fill in this section
