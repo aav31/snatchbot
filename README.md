@@ -1,7 +1,7 @@
 # snatchbot 🤖
 See. Solve. Snatch. A real-time computer vision system that recognizes letter tiles and suggests the best possible moves on the fly.
 
-TODO: Insert GIF here
+![Demo](resources/demo.gif)
 
 ## Features ✨
 - 🎥 **Real-time Tile Recognition** – Uses contour detection to instantly identify letter tiles.
@@ -9,7 +9,7 @@ TODO: Insert GIF here
 - ⚡ **Smart Word Suggestions** – Finds playable words with graph-based algorithms and updates them dynamically as new tiles appear.
 
 ## How It Works ⚙️
-The system uses **contour detection** to identify letter tiles, followed by **OCR technology** (Tesseract) for character recognition. Once the tiles are detected, a **graph-based algorithm** forms connected words, and a **brute-force solver** finds the best possible words to play. Here’s a quick breakdown:
+The system uses **contour detection** to identify letter tiles, followed by **OCR technology** (Tesseract) for character recognition. Once the tiles are detected, a **graph-based algorithm** forms connected words, and a **brute-force solver** finds the best possible words to play. The steps are:
 - Contour detection finds the edges of tiles.
 - OCR (Tesseract) extracts the letters from those tiles.
 - Graph algorithms link letters to form valid words.
@@ -18,7 +18,7 @@ The system uses **contour detection** to identify letter tiles, followed by **OC
 TODO: Insert Screenshots/Visuals here (showing the recognition process and word suggestions)
 
 ## Rules of Snatch 📜
-There are many variations of "snatch" (sometimes known as [Anagrams](https://en.wikipedia.org/wiki/Anagrams_(game))), but the version we play at home is as follows.
+There are many variations of "snatch" (sometimes known as [Anagrams](https://en.wikipedia.org/wiki/Anagrams_(game))), but the version we play at home is as follows:
 1. **Tile Pool Setup**: All tiles are placed face down in a pool at the center of the table. Players take turns flipping over tiles.
 2. **Word Formation**: When a player spots a word of three or more letters, they can form it in two ways:
    - **Using face-up tiles** from the pool to create a valid word.
