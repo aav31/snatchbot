@@ -42,7 +42,7 @@ public:
 	 * only contain strings which are greater than three characters in length.
 	 * 
 	 * @param words List of words currently on the board.
-	 * @return A list of snatchable words.
+	 * @return A list of snatchable words ordered by size and then alphabetically.
 	 */
 	std::vector<std::string> generateSnatchableWords(const std::vector<std::string>& words) {
 		std::vector<std::string> snatchableWords{};
@@ -62,6 +62,8 @@ public:
 			}
 
 		}
+		// Order by size and then alphabetically
+		std::sort(snatchableWords.begin(), snatchableWords.end(), [](const std::string& a, const std::string& b) { return a.size() == b.size() ? a < b : b.size() < a.size(); });
 		return snatchableWords;
 	}
 

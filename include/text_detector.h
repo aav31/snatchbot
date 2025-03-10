@@ -42,10 +42,11 @@ public:
      * 
      * @param frame The raw frame from the video camera.
      * @return A vector containing rotated rectangles that bound the detected tiles.
+     * @param verbose If true adds extra debugging information.
      * @note Expects white tiles on a completely black background with black letters.
      */
 
-    std::vector<cv::RotatedRect> getTileLocations(const cv::Mat& frame) const {
+    std::vector<cv::RotatedRect> getTileLocations(const cv::Mat& frame, bool verbose) const {
         cv::Mat processedFrame = preprocessFrame(frame);
 
         // Find contours - because there are white tiles on a black background
@@ -64,8 +65,8 @@ public:
             rotatedRectangles.push_back(rotatedRect);
         }
 
-        displayDetectedTiles(processedFrame, rotatedRectangles);
-        std::cout << "Number of tiles recognized: " << std::size(rotatedRectangles) << std::endl;
+        if (verbose) displayDetectedTiles(processedFrame, rotatedRectangles);
+        if (verbose) std::cout << "Number of tiles recognized: " << std::size(rotatedRectangles) << std::endl;
         return rotatedRectangles;
     }
 

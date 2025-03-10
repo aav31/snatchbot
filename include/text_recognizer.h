@@ -51,19 +51,43 @@ public:
      * 
      * @param frame The raw frame from the video camera.
      * @param rotatedRectangles Represents the location of the tiles within the frame.
+     * @param windowName Reference to the main window for OCR results display.
+     * @param verbose If true adds extra debugging information.
      * @return Vector containing the words currently on the board.
      */
-    std::vector<std::string> generateWords(const cv::Mat& frame, const std::vector<cv::RotatedRect>& rotatedRectangles) {
+    std::vector<std::string> generateWords(const cv::Mat& frame, const std::vector<cv::RotatedRect>& rotatedRectangles, const std::string& windowName, bool verbose) {
+        cv::Mat frameForDisplay = frame.clone();
         std::vector<LetterNode> letterNodes{};
         for (const auto& rotatedRectangle: rotatedRectangles) {
-            std::optional<char> letter{ recognizeLetter(frame, rotatedRectangle) };
+            // display rectangle
+            cv::Point2f vertices[4]; // get vertices of rect for drawing
+            rotatedRectangle.points(vertices);
+            for (int j = 0; j < 4; j++) {
+                int thickness{ 2 };
+                cv::line(frameForDisplay, vertices[j], vertices[(j + 1) % 4], colourGreen, thickness);
+            }
+
+            // recognize letter
+            std::optional<char> letter{ recognizeLetter(frame, rotatedRectangle, verbose) };
             if (letter) {
                 LetterNode letterNode{ *letter, rotatedRectangle };
                 letterNodes.push_back(letterNode);
+                // add letter text to display
+                std::string letterText(1, *letter);
+                int fontFace = cv::FONT_HERSHEY_SIMPLEX;
+                double fontScale = 0.5;
+                int textThickness = 1;
+                cv::Point2f textPosition = rotatedRectangle.center;
+                cv::putText(frameForDisplay, letterText, textPosition, fontFace, fontScale, cv::Scalar{ 0, 0, 255 }, textThickness);
             }
         }
         std::unordered_map<LetterNode, std::unordered_set<LetterNode>> letterNodeGraph{ LetterNodeUtils::createLetterNodeGraph(letterNodes, LetterNodeUtils::boundingBoxAdjacencyStrategy) };
         std::vector<std::string> words{ LetterNodeUtils::findConnectedComponents(letterNodeGraph)};
+        cv::imshow(windowName, frameForDisplay);
+        if (verbose) {
+            std::cout << "Words:\n";
+            std::for_each(words.begin(), words.end(), [](std::string x) { std::cout << x << std::endl; });
+        }
         return words;
     }
 
@@ -72,6 +96,7 @@ private:
     static constexpr int userDefinedDpi{ 300 };
     static inline const char* userDefinedDpiStr = "300";
     static constexpr double tileLengthInches{ 0.708661 };
+    static inline cv::Scalar colourGreen{ 0, 255, 0 };
 
     /**
      * @brief Private constructor to prevent instantiation.
@@ -95,9 +120,10 @@ private:
      *
      * @param frame The raw frame from the video camera.
      * @param rotatedRect The rotated rectangle containing the tile.
+     * @param verbose If true adds extra debugging information.
      * @return An optional single character if text can be recognized.
      */
-    std::optional<char> recognizeLetter(const cv::Mat& frame, const cv::RotatedRect& rotatedRect) {
+    std::optional<char> recognizeLetter(const cv::Mat& frame, const cv::RotatedRect& rotatedRect, bool verbose) {
         constexpr int CONFIDENCE_THRESHOLD = 50; // Define a clear threshold
         cv::Mat preprocessedImage = preprocessImage(frame, rotatedRect);
 
@@ -120,13 +146,13 @@ private:
                 }
             }
 
-            displayTile(preprocessedImage, text, confidences ? confidences[0] : 0);
+            if (verbose) displayTile(preprocessedImage, text, confidences ? confidences[0] : 0);
 
             tess.Clear();
         }
 
-        if (bestGuess && (bestGuessConfidence > CONFIDENCE_THRESHOLD)) {
-            std::cout << "Best guess: " << *bestGuess << " (Confidence: " << bestGuessConfidence << ")" << std::endl;
+        if ((bestGuess) && (bestGuessConfidence > CONFIDENCE_THRESHOLD)) {
+            if (verbose) std::cout << "Best guess: " << *bestGuess << " (Confidence: " << bestGuessConfidence << ")" << std::endl;
             return bestGuess;
         }
 
@@ -194,10 +220,9 @@ private:
         double fontScale = 0.5;  // Smaller font size
         int thickness = 1;
         cv::Point textOrg(10, 20); // Top left corner
-        cv::Scalar greenColour(0, 255, 0);
 
         // Put the text on the image
-        cv::putText(imageWithText, displayText, textOrg, fontFace, fontScale, greenColour, thickness);
+        cv::putText(imageWithText, displayText, textOrg, fontFace, fontScale, colourGreen, thickness);
 
         // Display the result
         cv::namedWindow("Preprocessed Image");

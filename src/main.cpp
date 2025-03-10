@@ -23,7 +23,7 @@
  * @param window_name Name of the display window.
  * @throw std::runtime_error If cannot initialize.
  */
-void initialize(cv::VideoCapture& cap, const std::string& window_name) {
+void initialize(cv::VideoCapture& cap, const std::string& windowName) {
     // initialize camera
     cap.open(0); // default video camera
     if (!cap.isOpened()) {
@@ -32,7 +32,7 @@ void initialize(cv::VideoCapture& cap, const std::string& window_name) {
     double dWidth = cap.get(cv::CAP_PROP_FRAME_WIDTH);
     double dHeight = cap.get(cv::CAP_PROP_FRAME_HEIGHT);
     std::cout << "Resolution of the video: " << dWidth << " x " << dHeight << std::endl;
-    cv::namedWindow(window_name);
+    cv::namedWindow(windowName);
 
     // initialize text processing tools
     TextDetector::getInstance();
@@ -47,28 +47,32 @@ void initialize(cv::VideoCapture& cap, const std::string& window_name) {
  * and a singleton TextRecognizer to extract words from those regions.
  *
  * @param frame Reference to the video frame to be processed.
+ * @param windowName Reference to the main window for OCR results display.
  */
-void processFrame(cv::Mat& frame) {
+void processFrame(cv::Mat& frame, const std::string& windowName) {
+    std::cout << "Processing frame ..." << std::endl;
     TextDetector& textDetector = TextDetector::getInstance();
     TextRecognizer& textRecognizer = TextRecognizer::getInstance();
     SnatchableWordGenerator& snatchableWordGenerator = SnatchableWordGenerator::getInstance();
-    std::vector<cv::RotatedRect> tileLocations = textDetector.getTileLocations(frame);
-    std::vector<std::string> words = textRecognizer.generateWords(frame, tileLocations);
-    std::cout << "Words:\n";
-    std::for_each(words.begin(), words.end(), [](std::string x) { std::cout << x << std::endl; });
+    std::vector<cv::RotatedRect> tileLocations = textDetector.getTileLocations(frame, false);
+    std::vector<std::string> words = textRecognizer.generateWords(frame, tileLocations, windowName, false);
     std::vector<std::string> snatchableWords = snatchableWordGenerator.generateSnatchableWords(words);
-    std::cout << "Snatchable words:\n";
-    std::for_each(snatchableWords.begin(), snatchableWords.end(), [](std::string x) { std::cout << x << std::endl; });
-    std::cout << "Frame processed." << std::endl;
+    if (std::size(snatchableWords) > 0) {
+        std::cout << "SNATCH!!!!!!!!!!!!!!!!\n";
+        std::for_each(snatchableWords.begin(), snatchableWords.end(), [](std::string x) { std::cout << x << std::endl; });
+    }
+    std::cout << "...frame processed." << std::endl;
+    std::cout << "Press any button to continue.\n";
+    cv::waitKey(0);
 }
 
 /**
  * @brief Displays available button options for user interaction.
  */
 void displayButtonOptions() {
-    std::cout << "\n===== Available Actions =====\n";
-    std::cout << "Press Enter: Perform text recognition on the current frame.\n";
-    std::cout << "Press Esc: Exit the application.\n";
+    std::cout << "\n=============================\n";
+    std::cout << "Press Enter to snatch.\n";
+    std::cout << "Press Esc to exit.\n";
     std::cout << "=============================\n";
 }
 
@@ -83,9 +87,9 @@ void displayButtonOptions() {
 int main() {
     cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_WARNING); // reduce OpenCV log level
     cv::VideoCapture cap;
-    std::string window_name = "My Camera Feed";
+    std::string windowName = "My Camera Feed";
     try {
-        initialize(cap, window_name);
+        initialize(cap, windowName);
     }
     catch (const std::runtime_error& e) {
         std::cerr << e.what() << std::endl;
@@ -101,12 +105,12 @@ int main() {
             return -1;
         }
 
-        cv::imshow(window_name, frame);
+        cv::imshow(windowName, frame);
         int key = cv::waitKey(10); // wait for 10 ms until a key is pressed
 
         switch (key) {
         case 13: // Enter key
-            processFrame(frame);
+            processFrame(frame, windowName);
             displayButtonOptions();
             break;
         case 27: // Escape key
