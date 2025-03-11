@@ -9,6 +9,7 @@
  */
 
 #include <iostream>
+#include <cstring>
 #include <algorithm>
 #include <opencv2/opencv.hpp>
 #include <tesseract/baseapi.h>
@@ -48,14 +49,15 @@ void initialize(cv::VideoCapture& cap, const std::string& windowName) {
  *
  * @param frame Reference to the video frame to be processed.
  * @param windowName Reference to the main window for OCR results display.
+ * @param verbose Extra debugging information for the text recognition steps.
  */
-void processFrame(cv::Mat& frame, const std::string& windowName) {
+void processFrame(cv::Mat& frame, const std::string& windowName, bool verbose) {
     std::cout << "Processing frame ..." << std::endl;
     TextDetector& textDetector = TextDetector::getInstance();
     TextRecognizer& textRecognizer = TextRecognizer::getInstance();
     SnatchableWordGenerator& snatchableWordGenerator = SnatchableWordGenerator::getInstance();
-    std::vector<cv::RotatedRect> tileLocations = textDetector.getTileLocations(frame, false);
-    std::vector<std::string> words = textRecognizer.generateWords(frame, tileLocations, windowName, false);
+    std::vector<cv::RotatedRect> tileLocations = textDetector.getTileLocations(frame, verbose);
+    std::vector<std::string> words = textRecognizer.generateWords(frame, tileLocations, windowName, verbose);
     std::vector<std::string> snatchableWords = snatchableWordGenerator.generateSnatchableWords(words);
     if (std::size(snatchableWords) > 0) {
         std::cout << "SNATCH!!!!!!!!!!!!!!!!\n";
@@ -84,10 +86,19 @@ void displayButtonOptions() {
  *
  * @return 0 on successful execution, -1 on failure.
  */
-int main() {
+int main(int argc, char* argv[]) {
     cv::utils::logging::setLogLevel(cv::utils::logging::LOG_LEVEL_WARNING); // reduce OpenCV log level
     cv::VideoCapture cap;
     std::string windowName = "My Camera Feed";
+    bool verbose = false; // debug info for the intermediate steps of text recognition
+
+    // Check for "--verbose" flag
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--verbose") == 0) {
+            verbose = true;
+        }
+    }
+
     try {
         initialize(cap, windowName);
     }
@@ -98,7 +109,7 @@ int main() {
     displayButtonOptions();
     while (true) {
         cv::Mat frame;
-        bool bSuccess = cap.read(frame); // read a new frame from video
+        bool bSuccess = cap.read(frame);
 
         if (!bSuccess) {
             std::cerr << "Video camera is disconnected" << std::endl;
@@ -110,7 +121,7 @@ int main() {
 
         switch (key) {
         case 13: // Enter key
-            processFrame(frame, windowName);
+            processFrame(frame, windowName, verbose);
             displayButtonOptions();
             break;
         case 27: // Escape key
