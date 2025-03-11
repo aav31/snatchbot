@@ -30,27 +30,28 @@ There are many variations of "snatch" (sometimes known as [Anagrams](https://en.
 
 ## Quick Start 🚀
 1. Clone the repository:
-   ```cmd
+   ```bash
    git clone 
    cd snatchbot
    ```
 2. Clone the `vcpkg` repository and create the `vcpkg.exe`:
-   ```cmd
-   git clone https://github.com/microsoft/vcpkg.git
+   ```bash
+   git clone https:\\github.com\microsoft\vcpkg.git
    vcpkg\bootstrap-vcpkg.bat
    ```
 3. Run the CMake step (specifying whichever generator or build system you have on your machine):
-   ```cmd
+   ```bash
    cmake -B build -S . -G "Visual Studio 17 2022" -A x64
    ```
    Alternatively, if using Visual Studio with the `cmake` tools extension, you can just open the root folder in Visual Studio. `CMakeSettings.json` tells Visual Studio which build system you want to use, which configurations etc.
 4. Build the project:
-   ```cmd
+   ```bash
    cmake --build build --config Debug
    ```
 5. Run the project:
-   ```cmd
-   build\Debug\my-project.exe
+   ```bash
+   cd build\Debug
+   my-project
    ```
 
 ## License 📄
@@ -60,6 +61,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Tests ✅
 Run all tests with:
-```cmd
-build\Debug\my-project_tests.exe
+```bash
+cd build\Debug
+my-project_tests
 ```
