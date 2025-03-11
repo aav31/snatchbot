@@ -31,12 +31,12 @@ There are many variations of "snatch" (sometimes known as [Anagrams](https://en.
 ## Quick Start 🚀
 1. Clone the repository:
    ```bash
-   git clone 
+   git clone https://github.com/aav31/snatchbot.git
    cd snatchbot
    ```
 2. Clone the `vcpkg` repository and create the `vcpkg.exe`:
    ```bash
-   git clone https:\\github.com\microsoft\vcpkg.git
+   git clone https://github.com/microsoft/vcpkg.git
    vcpkg\bootstrap-vcpkg.bat
    ```
 3. Run the CMake step (specifying whichever generator or build system you have on your machine):
