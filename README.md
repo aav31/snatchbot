@@ -10,11 +10,12 @@ See. Solve. Snatch. A real-time computer vision system that recognizes letter ti
 - ⚡ **Smart Word Suggestions** – Finds playable words with graph-based algorithms and updates them dynamically as new tiles appear.
 
 ## How It Works ⚙️
-The system uses **contour detection** to identify letter tiles, followed by **OCR technology** (Tesseract) for character recognition. Once the tiles are detected, a **graph-based algorithm** forms connected words, and a **brute-force solver** finds the best possible words to play. The steps are:
-- Contour detection finds the edges of tiles.
-- OCR (Tesseract) extracts the letters from those tiles.
-- Graph algorithms link letters to form valid words.
-- The system uses a brute-force solver to generate the best snatchable words.
+The system uses **contour detection** to identify letter tiles, followed by **OCR** for character recognition. Once the tiles are detected, a **graph-based algorithm** forms connected words, and a **brute-force solver** finds the best possible words to play.
+
+1. **Contour detection**: The raw frame from the camera is converted to grayscale, blurred and thresholded. Contour detection can then be used to pick out individual letter tiles; only tiles with a valid aspect ratio are selected.
+2. **OCR**: Tesseract is the OCR engine used to extract the letters from those tiles. Optimistically I first tried to use a lightweight solution utilizing OpenCV's own [TextDetectionModel and TextRecognitionModel](https://docs.opencv.org/4.x/d4/d43/tutorial_dnn_text_spotting.html) but since the training set is vastly different to the use case here, the results were not accurate enough. Tesseract is typically designed for recognizing text within scanned documents, making it less straightforward to use for recognizing individual letter tiles.
+3. **Graph algorithm**: Link letters to form valid words.
+4. **Brute-force solver**: The system uses a brute-force solver to generate the best snatchable words.
 
 TODO: Insert Screenshots/Visuals here (showing the recognition process and word suggestions)
 
