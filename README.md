@@ -1,6 +1,7 @@
 # snatchbot 🤖
 See. Solve. Snatch. A real-time computer vision system that recognizes letter tiles and suggests the best possible moves on the fly.
 
+**Note: The demo GIF may take a few seconds to load. Please be patient.**
 ![Demo](resources/demo.gif)
 
 ## Features ✨
@@ -28,33 +29,37 @@ There are many variations of "snatch" (sometimes known as [Anagrams](https://en.
 5. **Game End & Scoring**: The game ends when all tiles are face up and no further words can be formed. Players score based on the number of letter tiles they have.
 
 ## Quick Start 🚀
-
-TODO: Improve this section, perhaps make it more concise
-
-1. Clone the repository
+1. Clone the repository:
    ```cmd
    git clone 
    cd snatchbot
    ```
-2. Create `vcpkg.exe`.
+2. Clone the `vcpkg` repository and create the `vcpkg.exe`:
    ```cmd
    git clone https://github.com/microsoft/vcpkg.git
    vcpkg\bootstrap-vcpkg.bat
    ```
-3. Run `cmake` step, specifying whichever generator or build system you have on your machine.
+3. Run the CMake step (specifying whichever generator or build system you have on your machine):
    ```cmd
    cmake -B build -S . -G "Visual Studio 17 2022" -A x64
    ```
    Alternatively, if using Visual Studio with the `cmake` tools extension, you can just open the root folder in Visual Studio. `CMakeSettings.json` tells Visual Studio which build system you want to use, which configurations etc.
-4. Build the project
+4. Build the project:
    ```cmd
    cmake --build build --config Debug
    ```
+5. Run the project:
+   ```cmd
+   build\Debug\my-project.exe
+   ```
 
 ## License 📄
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
-TODO: Add MIT license
+![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 ## Tests ✅
-
-TODO: Fill in this section
+Run all tests with:
+```cmd
+build\Debug\my-project_tests.exe
+```
